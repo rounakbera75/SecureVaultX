@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Secure password manager and file encryption tool">
+  <title>SecureVault - Password Manager & File Protection</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="spinner"></div>
+    <p>Processing...</p>
+  </div>
+
+  <!-- Auth Section -->
+  <div id="auth-section" class="card auth-card">
+    <div class="logo-container">
+      <div class="logo-icon">🔐</div>
+      <h1>SecureVault</h1>
+      <p class="subtitle">Your secure password manager</p>
+    </div>
+
+    <form id="auth-form" onsubmit="event.preventDefault();">
+      <div class="input-group">
+        <label for="master-pass">
+          <span>Master Password</span>
+          <span class="password-strength" id="password-strength-indicator"></span>
+        </label>
+        <div class="input-wrapper">
+          <input 
+            type="password" 
+            id="master-pass" 
+            placeholder="Enter master password" 
+            aria-label="Master password"
+            autocomplete="current-password"
+            required
+            minlength="8">
+          <button 
+            type="button" 
+            class="icon-btn" 
+            id="toggle-master-pass"
+            aria-label="Toggle password visibility"
+            onclick="togglePasswordVisibility('master-pass', 'toggle-master-pass')">
+            👁️
+          </button>
+        </div>
+        <div class="password-strength-meter">
+          <div class="strength-bar" id="strength-bar"></div>
+        </div>
+        <small class="hint">Minimum 8 characters. Use a strong, unique password.</small>
+      </div>
+
+      <div class="button-group">
+        <button 
+          type="button" 
+          id="registerBtn" 
+          class="btn btn-primary"
+          onclick="register()"
+          aria-label="Register new vault">
+          <span>Register</span>
+        </button>
+        <button 
+          type="button" 
+          id="loginBtn" 
+          class="btn btn-secondary"
+          onclick="login()"
+          aria-label="Login to vault">
+          <span>Login</span>
+        </button>
+      </div>
+
+      <p id="auth-message" class="message" role="alert"></p>
+
+      <div class="danger-zone">
+        <button 
+          type="button" 
+          class="btn btn-danger" 
+          onclick="resetVault()"
+          aria-label="Reset vault - this will delete all data">
+          <span>⚠️ Reset Vault</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Vault Section -->
+  <div id="vault" style="display:none;">
+    <!-- Header -->
+    <header class="vault-header">
+      <div class="header-content">
+        <h1>🔐 SecureVault</h1>
+        <div class="header-actions">
+          <button 
+            class="btn btn-icon" 
+            id="theme-toggle"
+            onclick="toggleTheme()"
+            aria-label="Toggle dark mode">
+            🌙
+          </button>
+          <button 
+            class="btn btn-icon" 
+            onclick="showSessionInfo()"
+            aria-label="Session information">
+            ⏱️
+          </button>
+          <button 
+            class="btn btn-secondary" 
+            onclick="logout()"
+            aria-label="Logout">
+            Logout
+          </button>
+        </div>
+      </div>
+      <div class="session-timer" id="session-timer"></div>
+    </header>
+
+    <div class="vault-container">
+      <!-- Add Password Section -->
+      <section class="card section-card">
+        <h2>Add New Password</h2>
+        <form id="password-form" onsubmit="event.preventDefault(); addPassword();">
+          <div class="form-grid">
+            <div class="input-group">
+              <label for="site">Website/Service</label>
+              <input 
+                id="site" 
+                type="text"
+                placeholder="example.com" 
+                aria-label="Website or service name"
+                required>
+            </div>
+            <div class="input-group">
+              <label for="user">Username/Email</label>
+              <input 
+                id="user" 
+                type="text"
+                placeholder="username@example.com" 
+                aria-label="Username or email"
+                required>
+            </div>
+            <div class="input-group">
+              <label for="pass">Password</label>
+              <div class="input-wrapper">
+                <input 
+                  id="pass" 
+                  type="password"
+                  placeholder="Password" 
+                  aria-label="Password"
+                  required>
+                <button 
+                  type="button" 
+                  class="icon-btn" 
+                  id="toggle-pass"
+                  onclick="togglePasswordVisibility('pass', 'toggle-pass')"
+                  aria-label="Toggle password visibility">
+                  👁️
+                </button>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="category">Category <span class="optional">(optional)</span></label>
+              <select id="category" aria-label="Password category">
+                <option value="">None</option>
+                <option value="work">Work</option>
+                <option value="personal">Personal</option>
+                <option value="finance">Finance</option>
+                <option value="social">Social Media</option>
+                <option value="email">Email</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="button-group">
+            <button type="submit" class="btn btn-primary">
+              <span>💾 Save Password</span>
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-secondary" 
+              onclick="showPasswordGenerator()"
+              aria-label="Open password generator">
+              <span>🎲 Generate Password</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Password Generator Modal -->
+      <div id="password-generator-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Password Generator</h2>
+            <button class="modal-close" onclick="closePasswordGenerator()" aria-label="Close">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="input-group">
+              <label for="gen-length">Length: <span id="length-value">16</span></label>
+              <input 
+                type="range" 
+                id="gen-length" 
+                min="8" 
+                max="64" 
+                value="16"
+                oninput="updateGeneratorLength(this.value)">
+            </div>
+            <div class="checkbox-group">
+              <label>
+                <input type="checkbox" id="gen-uppercase" checked>
+                Uppercase (A-Z)
+              </label>
+              <label>
+                <input type="checkbox" id="gen-lowercase" checked>
+                Lowercase (a-z)
+              </label>
+              <label>
+                <input type="checkbox" id="gen-numbers" checked>
+                Numbers (0-9)
+              </label>
+              <label>
+                <input type="checkbox" id="gen-symbols" checked>
+                Symbols (!@#$%^&*)
+              </label>
+            </div>
+            <div class="input-group">
+              <label for="generated-password">Generated Password</label>
+              <div class="input-wrapper">
+                <input 
+                  type="text" 
+                  id="generated-password" 
+                  readonly
+                  aria-label="Generated password">
+                <button 
+                  type="button" 
+                  class="icon-btn" 
+                  onclick="copyGeneratedPassword()"
+                  aria-label="Copy generated password">
+                  📋
+                </button>
+              </div>
+            </div>
+            <div class="button-group">
+              <button 
+                type="button" 
+                class="btn btn-primary" 
+                onclick="generateAdvancedPassword()">
+                Generate New
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-secondary" 
+                onclick="useGeneratedPassword()">
+                Use This Password
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search and Filter -->
+      <section class="card section-card">
+        <div class="search-filter-bar">
+          <div class="input-group">
+            <input 
+              type="text" 
+              id="search-input" 
+              placeholder="🔍 Search passwords..."
+              aria-label="Search passwords"
+              oninput="filterPasswords()">
+          </div>
+          <div class="filter-group">
+            <select id="category-filter" onchange="filterPasswords()" aria-label="Filter by category">
+              <option value="">All Categories</option>
+              <option value="work">Work</option>
+              <option value="personal">Personal</option>
+              <option value="finance">Finance</option>
+              <option value="social">Social Media</option>
+              <option value="email">Email</option>
+              <option value="other">Other</option>
+            </select>
+            <button 
+              class="btn btn-icon" 
+              onclick="clearFilters()"
+              aria-label="Clear filters">
+              ✕
+            </button>
+          </div>
+        </div>
+        <div class="password-count" id="password-count"></div>
+      </section>
+
+      <!-- Saved Passwords -->
+      <section class="card section-card">
+        <div class="section-header">
+          <h2>Saved Passwords</h2>
+          <div class="section-actions">
+            <button 
+              class="btn btn-icon" 
+              onclick="exportVault()"
+              aria-label="Export vault">
+              📥 Export
+            </button>
+            <label class="btn btn-icon" for="importVaultInput" aria-label="Import vault">
+              📤 Import
+            </label>
+            <input 
+              type="file" 
+              id="importVaultInput" 
+              style="display:none;" 
+              accept=".json"
+              onchange="importVault(event)">
+          </div>
+        </div>
+        <div id="password-list" class="password-list" role="list"></div>
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <div class="empty-icon">🔒</div>
+          <p>No passwords saved yet</p>
+          <small>Add your first password above to get started</small>
+        </div>
+      </section>
+
+      <!-- File Encryption Section -->
+      <section class="card section-card">
+        <h2>File Encryption</h2>
+        <div class="file-encryption-grid">
+          <div class="file-section">
+            <h3>Encrypt File</h3>
+            <p class="section-description">Encrypt any file with AES-256-GCM encryption</p>
+            <div class="input-group">
+              <label for="fileInput">Select File</label>
+              <input 
+                type="file" 
+                id="fileInput"
+                aria-label="Select file to encrypt">
+            </div>
+            <button 
+              class="btn btn-primary" 
+              onclick="encryptFile()"
+              aria-label="Encrypt and download file">
+              🔒 Encrypt & Download
+            </button>
+          </div>
+          <div class="file-section">
+            <h3>Decrypt File</h3>
+            <p class="section-description">Decrypt a previously encrypted .enc file</p>
+            <div class="input-group">
+              <label for="encFileInput">Select Encrypted File</label>
+              <input 
+                type="file" 
+                id="encFileInput"
+                accept=".enc"
+                aria-label="Select encrypted file to decrypt">
+            </div>
+            <button 
+              class="btn btn-secondary" 
+              onclick="decryptFileInput()"
+              aria-label="Decrypt file">
+              🔓 Decrypt & Download
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <p id="vault-message" class="message" role="alert"></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
