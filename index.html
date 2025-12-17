@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <!-- Toast Notification Container -->
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
@@ -25,7 +27,7 @@
     <div class="logo-container">
       <div class="logo-icon">🔐</div>
       <h1>SecureVault</h1>
-      <p class="subtitle">Your secure password manager</p>
+      <p class="subtitle">Professional Local-First Password Manager</p>
     </div>
 
     <form id="auth-form" onsubmit="event.preventDefault();">
@@ -35,57 +37,35 @@
           <span class="password-strength" id="password-strength-indicator"></span>
         </label>
         <div class="input-wrapper">
-          <input 
-            type="password" 
-            id="master-pass" 
-            placeholder="Enter master password" 
-            aria-label="Master password"
-            autocomplete="current-password"
-            required
-            minlength="8">
-          <button 
-            type="button" 
-            class="icon-btn" 
-            id="toggle-master-pass"
-            aria-label="Toggle password visibility"
-            onclick="togglePasswordVisibility('master-pass', 'toggle-master-pass')">
+          <input type="password" id="master-pass" placeholder="Enter master password" aria-label="Master password"
+            autocomplete="current-password" required minlength="8">
+          <button type="button" class="icon-btn" id="toggle-master-pass" aria-label="Toggle password visibility"
+            onclick="ui.togglePasswordVisibility('master-pass', 'toggle-master-pass')">
             👁️
           </button>
         </div>
         <div class="password-strength-meter">
           <div class="strength-bar" id="strength-bar"></div>
         </div>
-        <small class="hint">Minimum 8 characters. Use a strong, unique password.</small>
+        <small class="hint">Minimum 8 characters. Encryption takes ~1s for max security.</small>
       </div>
 
       <div class="button-group">
-        <button 
-          type="button" 
-          id="registerBtn" 
-          class="btn btn-primary"
-          onclick="register()"
+        <button type="button" id="registerBtn" class="btn btn-primary" onclick="app.register()"
           aria-label="Register new vault">
-          <span>Register</span>
+          <span>Register New Vault</span>
         </button>
-        <button 
-          type="button" 
-          id="loginBtn" 
-          class="btn btn-secondary"
-          onclick="login()"
-          aria-label="Login to vault">
-          <span>Login</span>
+        <button type="button" id="loginBtn" class="btn btn-secondary" onclick="app.login()" aria-label="Login to vault">
+          <span>Unlock Vault</span>
         </button>
       </div>
 
       <p id="auth-message" class="message" role="alert"></p>
 
       <div class="danger-zone">
-        <button 
-          type="button" 
-          class="btn btn-danger" 
-          onclick="resetVault()"
+        <button type="button" class="btn btn-danger" onclick="app.resetVault()"
           aria-label="Reset vault - this will delete all data">
-          <span>⚠️ Reset Vault</span>
+          <span>⚠️ Reset / Delete Vault</span>
         </button>
       </div>
     </form>
@@ -96,26 +76,16 @@
     <!-- Header -->
     <header class="vault-header">
       <div class="header-content">
-        <h1>🔐 SecureVault</h1>
+        <h1>🔐 SecureVault <span class="version-badge">v2.0</span></h1>
         <div class="header-actions">
-          <button 
-            class="btn btn-icon" 
-            id="theme-toggle"
-            onclick="toggleTheme()"
-            aria-label="Toggle dark mode">
+          <button class="btn btn-icon" id="theme-toggle" onclick="ui.toggleTheme()" aria-label="Toggle dark mode">
             🌙
           </button>
-          <button 
-            class="btn btn-icon" 
-            onclick="showSessionInfo()"
-            aria-label="Session information">
+          <button class="btn btn-icon" onclick="app.checkSession()" aria-label="Session information">
             ⏱️
           </button>
-          <button 
-            class="btn btn-secondary" 
-            onclick="logout()"
-            aria-label="Logout">
-            Logout
+          <button class="btn btn-secondary" onclick="app.logout()" aria-label="Logout">
+            Lock Vault
           </button>
         </div>
       </div>
@@ -123,71 +93,103 @@
     </header>
 
     <div class="vault-container">
-      <!-- Add Password Section -->
+
+      <!-- Security Dashboard -->
+      <section class="card section-card dashboard-card">
+        <h2>Security Dashboard</h2>
+        <div class="dashboard-grid">
+          <div class="dash-item">
+            <div class="dash-value" id="dash-total">0</div>
+            <div class="dash-label">Total Items</div>
+          </div>
+          <div class="dash-item">
+            <div class="dash-value" id="dash-weak">0</div>
+            <div class="dash-label">Weak Passwords</div>
+          </div>
+          <div class="dash-item">
+            <div class="dash-value" id="dash-reused">0</div>
+            <div class="dash-label">Reused Passwords</div>
+          </div>
+          <div class="dash-item" id="dash-score-card">
+            <div class="dash-value" id="dash-score">0%</div>
+            <div class="dash-label">Security Score</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Add New Item Section (Tabs for Password / Note) -->
       <section class="card section-card">
-        <h2>Add New Password</h2>
-        <form id="password-form" onsubmit="event.preventDefault(); addPassword();">
+        <h2>Add Item</h2>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="ui.switchTab('password')">Password</button>
+          <button class="tab-btn" onclick="ui.switchTab('note')">Secure Note</button>
+        </div>
+
+        <form id="password-form" onsubmit="event.preventDefault(); app.addItem();">
+          <input type="hidden" id="entry-type" value="password">
           <div class="form-grid">
-            <div class="input-group">
-              <label for="site">Website/Service</label>
-              <input 
-                id="site" 
-                type="text"
-                placeholder="example.com" 
-                aria-label="Website or service name"
-                required>
+
+            <!-- Shared: Title -->
+            <div class="input-group full-width">
+              <label for="site" id="label-site">Website / Title</label>
+              <input id="site" type="text" placeholder="example.com or Title" aria-label="Title" required>
             </div>
-            <div class="input-group">
+
+            <!-- Password Fields -->
+            <div class="input-group password-only">
               <label for="user">Username/Email</label>
-              <input 
-                id="user" 
-                type="text"
-                placeholder="username@example.com" 
-                aria-label="Username or email"
-                required>
+              <input id="user" type="text" placeholder="username@example.com" aria-label="Username or email">
             </div>
-            <div class="input-group">
-              <label for="pass">Password</label>
+
+            <div class="input-group password-only">
+              <label for="pass">
+                <span>Password</span>
+                <span class="password-strength" id="item-pass-strength"></span>
+              </label>
               <div class="input-wrapper">
-                <input 
-                  id="pass" 
-                  type="password"
-                  placeholder="Password" 
-                  aria-label="Password"
-                  required>
-                <button 
-                  type="button" 
-                  class="icon-btn" 
-                  id="toggle-pass"
-                  onclick="togglePasswordVisibility('pass', 'toggle-pass')"
-                  aria-label="Toggle password visibility">
+                <input id="pass" type="password" placeholder="Password" aria-label="Password">
+                <button type="button" class="icon-btn" id="toggle-pass"
+                  onclick="ui.togglePasswordVisibility('pass', 'toggle-pass')" aria-label="Toggle password visibility">
                   👁️
                 </button>
               </div>
+              <div class="password-strength-meter">
+                <div class="strength-bar" id="item-strength-bar"></div>
+              </div>
             </div>
+
+            <!-- Note Field -->
+            <div class="input-group note-only" style="display:none; grid-column: span 2;">
+              <label for="note-content">Secure Note</label>
+              <textarea id="note-content" rows="4" placeholder="Enter secure notes here..."></textarea>
+            </div>
+
             <div class="input-group">
               <label for="category">Category <span class="optional">(optional)</span></label>
-              <select id="category" aria-label="Password category">
+              <select id="category" aria-label="Category">
                 <option value="">None</option>
                 <option value="work">Work</option>
                 <option value="personal">Personal</option>
                 <option value="finance">Finance</option>
                 <option value="social">Social Media</option>
                 <option value="email">Email</option>
+                <option value="note">Note</option>
                 <option value="other">Other</option>
               </select>
             </div>
           </div>
+
           <div class="button-group">
             <button type="submit" class="btn btn-primary">
-              <span>💾 Save Password</span>
+              <span>💾 Save Item</span>
             </button>
-            <button 
-              type="button" 
-              class="btn btn-secondary" 
-              onclick="showPasswordGenerator()"
+            <button type="button" class="btn btn-secondary password-only" onclick="ui.showPasswordGenerator()"
               aria-label="Open password generator">
               <span>🎲 Generate Password</span>
+            </button>
+            <button type="button" id="cancel-edit-btn" class="btn btn-danger" style="display:none;"
+              onclick="app.cancelEdit()" aria-label="Cancel editing">
+              <span>✕ Cancel Edit</span>
             </button>
           </div>
         </form>
@@ -198,18 +200,13 @@
         <div class="modal-content">
           <div class="modal-header">
             <h2>Password Generator</h2>
-            <button class="modal-close" onclick="closePasswordGenerator()" aria-label="Close">×</button>
+            <button class="modal-close" onclick="ui.closePasswordGenerator()" aria-label="Close">×</button>
           </div>
           <div class="modal-body">
             <div class="input-group">
               <label for="gen-length">Length: <span id="length-value">16</span></label>
-              <input 
-                type="range" 
-                id="gen-length" 
-                min="8" 
-                max="64" 
-                value="16"
-                oninput="updateGeneratorLength(this.value)">
+              <input type="range" id="gen-length" min="8" max="64" value="16"
+                oninput="ui.updateGeneratorLength(this.value)">
             </div>
             <div class="checkbox-group">
               <label>
@@ -232,31 +229,18 @@
             <div class="input-group">
               <label for="generated-password">Generated Password</label>
               <div class="input-wrapper">
-                <input 
-                  type="text" 
-                  id="generated-password" 
-                  readonly
-                  aria-label="Generated password">
-                <button 
-                  type="button" 
-                  class="icon-btn" 
-                  onclick="copyGeneratedPassword()"
+                <input type="text" id="generated-password" readonly aria-label="Generated password">
+                <button type="button" class="icon-btn" onclick="ui.copyGeneratedPassword()"
                   aria-label="Copy generated password">
                   📋
                 </button>
               </div>
             </div>
             <div class="button-group">
-              <button 
-                type="button" 
-                class="btn btn-primary" 
-                onclick="generateAdvancedPassword()">
+              <button type="button" class="btn btn-primary" onclick="ui.generateAdvancedPassword()">
                 Generate New
               </button>
-              <button 
-                type="button" 
-                class="btn btn-secondary" 
-                onclick="useGeneratedPassword()">
+              <button type="button" class="btn btn-secondary" onclick="ui.useGeneratedPassword()">
                 Use This Password
               </button>
             </div>
@@ -268,27 +252,21 @@
       <section class="card section-card">
         <div class="search-filter-bar">
           <div class="input-group">
-            <input 
-              type="text" 
-              id="search-input" 
-              placeholder="🔍 Search passwords..."
-              aria-label="Search passwords"
-              oninput="filterPasswords()">
+            <input type="text" id="search-input" placeholder="🔍 Search items..." aria-label="Search items"
+              oninput="ui.filterItems()">
           </div>
           <div class="filter-group">
-            <select id="category-filter" onchange="filterPasswords()" aria-label="Filter by category">
+            <select id="category-filter" onchange="ui.filterItems()" aria-label="Filter by category">
               <option value="">All Categories</option>
               <option value="work">Work</option>
               <option value="personal">Personal</option>
               <option value="finance">Finance</option>
               <option value="social">Social Media</option>
               <option value="email">Email</option>
+              <option value="note">Notes</option>
               <option value="other">Other</option>
             </select>
-            <button 
-              class="btn btn-icon" 
-              onclick="clearFilters()"
-              aria-label="Clear filters">
+            <button class="btn btn-icon" onclick="ui.clearFilters()" aria-label="Clear filters">
               ✕
             </button>
           </div>
@@ -296,33 +274,26 @@
         <div class="password-count" id="password-count"></div>
       </section>
 
-      <!-- Saved Passwords -->
+      <!-- Saved Items -->
       <section class="card section-card">
         <div class="section-header">
-          <h2>Saved Passwords</h2>
+          <h2>Your Vault</h2>
           <div class="section-actions">
-            <button 
-              class="btn btn-icon" 
-              onclick="exportVault()"
-              aria-label="Export vault">
-              📥 Export
+            <button class="btn btn-icon" onclick="app.exportVault()" aria-label="Export vault">
+              📥 Export JSON
             </button>
             <label class="btn btn-icon" for="importVaultInput" aria-label="Import vault">
-              📤 Import
+              📤 Import JSON
             </label>
-            <input 
-              type="file" 
-              id="importVaultInput" 
-              style="display:none;" 
-              accept=".json"
-              onchange="importVault(event)">
+            <input type="file" id="importVaultInput" style="display:none;" accept=".json"
+              onchange="app.importVault(event)">
           </div>
         </div>
         <div id="password-list" class="password-list" role="list"></div>
         <div id="empty-state" class="empty-state" style="display: none;">
           <div class="empty-icon">🔒</div>
-          <p>No passwords saved yet</p>
-          <small>Add your first password above to get started</small>
+          <p>Vault is empty</p>
+          <small>Add your first password or note above</small>
         </div>
       </section>
 
@@ -332,18 +303,13 @@
         <div class="file-encryption-grid">
           <div class="file-section">
             <h3>Encrypt File</h3>
-            <p class="section-description">Encrypt any file with AES-256-GCM encryption</p>
+            <p class="section-description">Encrypt any file with AES-256-GCM. <strong>Now supports large files
+                (>100MB).</strong></p>
             <div class="input-group">
               <label for="fileInput">Select File</label>
-              <input 
-                type="file" 
-                id="fileInput"
-                aria-label="Select file to encrypt">
+              <input type="file" id="fileInput" aria-label="Select file to encrypt">
             </div>
-            <button 
-              class="btn btn-primary" 
-              onclick="encryptFile()"
-              aria-label="Encrypt and download file">
+            <button class="btn btn-primary" onclick="app.encryptFile()" aria-label="Encrypt and download file">
               🔒 Encrypt & Download
             </button>
           </div>
@@ -352,16 +318,9 @@
             <p class="section-description">Decrypt a previously encrypted .enc file</p>
             <div class="input-group">
               <label for="encFileInput">Select Encrypted File</label>
-              <input 
-                type="file" 
-                id="encFileInput"
-                accept=".enc"
-                aria-label="Select encrypted file to decrypt">
+              <input type="file" id="encFileInput" accept=".enc" aria-label="Select encrypted file to decrypt">
             </div>
-            <button 
-              class="btn btn-secondary" 
-              onclick="decryptFileInput()"
-              aria-label="Decrypt file">
+            <button class="btn btn-secondary" onclick="app.decryptFileInput()" aria-label="Decrypt file">
               🔓 Decrypt & Download
             </button>
           </div>
@@ -374,4 +333,5 @@
 
   <script src="script.js"></script>
 </body>
+
 </html>
